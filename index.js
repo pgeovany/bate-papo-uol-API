@@ -36,6 +36,13 @@ app.post("/participants", (req, res) => {
   });
 });
 
+app.get("/participants", (req, res) => {
+  const promise = db.collection("participants").find().toArray();
+  promise.then((participants) => {
+    res.send(participants);
+  });
+});
+
 app.listen(process.env.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);
 });
