@@ -10,6 +10,7 @@
   },
   "rules": {
     "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
-    "no-console": "off"
+    "no-console": "off",
+    "import/extensions": "off"
   }
 }
