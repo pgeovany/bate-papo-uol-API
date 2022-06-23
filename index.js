@@ -11,14 +11,8 @@ const app = express();
 app.use([cors(), json()]);
 
 const mongoClient = new MongoClient(process.env.MONGO_URI);
-let db;
-
-async function getDataBase() {
-  await mongoClient.connect();
-  db = mongoClient.db("bate-papo-uol");
-}
-
-getDataBase();
+await mongoClient.connect();
+const db = mongoClient.db("bate-papo-uol");
 
 app.post("/participants", async (req, res) => {
   const { name } = req.body;
@@ -26,19 +20,26 @@ app.post("/participants", async (req, res) => {
     res.sendStatus(422);
     return;
   }
-
-  const user = await db.collection("participants").findOne({ name });
-  if (user) {
-    res.sendStatus(409);
-    return;
+  try {
+    const user = await db.collection("participants").findOne({ name });
+    if (user) {
+      res.sendStatus(409);
+      return;
+    }
+    saveUser(name, db);
+    res.sendStatus(201);
+  } catch (error) {
+    res.status(500).send("Erro ao se conectar ao chat!");
   }
-  saveUser(name, db);
-  res.sendStatus(201);
 });
 
 app.get("/participants", async (req, res) => {
-  const participants = await db.collection("participants").find().toArray();
-  res.send(participants);
+  try {
+    const participants = await db.collection("participants").find().toArray();
+    res.send(participants);
+  } catch (error) {
+    res.status(500).send("Erro ao carregar a lista de participantes!");
+  }
 });
 
 app.listen(process.env.PORT, () => {
