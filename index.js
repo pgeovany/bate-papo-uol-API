@@ -13,34 +13,32 @@ app.use([cors(), json()]);
 const mongoClient = new MongoClient(process.env.MONGO_URI);
 let db;
 
-mongoClient.connect().then(() => {
+async function getDataBase() {
+  await mongoClient.connect();
   db = mongoClient.db("bate-papo-uol");
-});
+}
 
-app.post("/participants", (req, res) => {
+getDataBase();
+
+app.post("/participants", async (req, res) => {
   const { name } = req.body;
   if (!name || typeof name !== "string") {
     res.sendStatus(422);
     return;
   }
 
-  const promise = db.collection("participants").findOne({ name });
-
-  promise.then((user) => {
-    if (user) {
-      res.sendStatus(409);
-      return;
-    }
-    saveUser(name, db);
-    res.sendStatus(201);
-  });
+  const user = await db.collection("participants").findOne({ name });
+  if (user) {
+    res.sendStatus(409);
+    return;
+  }
+  saveUser(name, db);
+  res.sendStatus(201);
 });
 
-app.get("/participants", (req, res) => {
-  const promise = db.collection("participants").find().toArray();
-  promise.then((participants) => {
-    res.send(participants);
-  });
+app.get("/participants", async (req, res) => {
+  const participants = await db.collection("participants").find().toArray();
+  res.send(participants);
 });
 
 app.listen(process.env.PORT, () => {
