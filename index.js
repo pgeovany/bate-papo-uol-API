@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import saveUser from "./utils/saveUser.js";
+import saveMessage from "./utils/saveMessage.js";
 
 dotenv.config();
 
@@ -40,6 +41,14 @@ app.get("/participants", async (req, res) => {
   } catch (error) {
     res.status(500).send("Erro ao carregar a lista de participantes!");
   }
+});
+
+app.post("/messages", async (req, res) => {
+  const { to, text, type } = req.body;
+  const { user: from } = req.headers;
+
+  saveMessage(from, to, text, type, db);
+  res.sendStatus(201);
 });
 
 app.listen(process.env.PORT, () => {
