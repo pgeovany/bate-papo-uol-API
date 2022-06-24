@@ -3,6 +3,7 @@ import { MongoClient } from "mongodb";
 import cors from "cors";
 import dotenv from "dotenv";
 
+import { userSchema, messageSchema } from "./utils/joiSchemas.js";
 import saveUser from "./utils/saveUser.js";
 import saveMessage from "./utils/saveMessage.js";
 
@@ -16,11 +17,15 @@ await mongoClient.connect();
 const db = mongoClient.db("bate-papo-uol");
 
 app.post("/participants", async (req, res) => {
-  const { name } = req.body;
-  if (!name || typeof name !== "string") {
+  const name = req.body;
+
+  try {
+    await userSchema.validateAsync(name);
+  } catch (error) {
     res.sendStatus(422);
     return;
   }
+
   try {
     const user = await db.collection("participants").findOne({ name });
     if (user) {
@@ -44,10 +49,20 @@ app.get("/participants", async (req, res) => {
 });
 
 app.post("/messages", async (req, res) => {
-  const { to, text, type } = req.body;
-  const { user: from } = req.headers;
+  const { user } = req.headers;
+  const message = {
+    ...req.body,
+    from: user,
+  };
 
-  saveMessage(from, to, text, type, db);
+  try {
+    await messageSchema.validateAsync(message);
+  } catch (error) {
+    res.sendStatus(422);
+    return;
+  }
+
+  saveMessage(message, db);
   res.sendStatus(201);
 });
 
