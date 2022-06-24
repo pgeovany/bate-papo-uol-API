@@ -7,7 +7,7 @@ const userSchema = joi.object({
 const messageSchema = joi.object({
   to: joi.string().required(),
   text: joi.string().required(),
-  type: joi.string().required(),
+  type: joi.any().valid("message", "private_message").required(),
   from: joi.string().required(),
 });
 
