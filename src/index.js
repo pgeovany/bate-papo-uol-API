@@ -6,6 +6,7 @@ import saveUser from "./utils/saveUser.js";
 import saveMessage from "./utils/saveMessage.js";
 import updateUserStatus from "./utils/updateUserStatus.js";
 import getUserByName from "./utils/getUserByName.js";
+import mapInactiveUsers from "./utils/mapInactiveUsers.js";
 import { userSchema, messageSchema } from "./utils/schemas.js";
 import { getDataBase, closeDataBase } from "./utils/dataBaseFunctions.js";
 
@@ -13,6 +14,8 @@ dotenv.config();
 
 const app = express();
 app.use([cors(), json()]);
+
+mapInactiveUsers();
 
 app.post("/participants", async (req, res) => {
   const { name } = req.body;
