@@ -1,26 +1,18 @@
 import express, { json } from "express";
-import { MongoClient } from "mongodb";
 import cors from "cors";
 import dotenv from "dotenv";
+
 import saveUser from "./utils/saveUser.js";
 import saveMessage from "./utils/saveMessage.js";
-import { userSchema, messageSchema } from "./utils/Schemas.js";
+import updateUserStatus from "./utils/updateUserStatus.js";
+import getUserByName from "./utils/getUserByName.js";
+import { userSchema, messageSchema } from "./utils/schemas.js";
+import { getDataBase, closeDataBase } from "./utils/dataBaseFunctions.js";
 
 dotenv.config();
 
 const app = express();
 app.use([cors(), json()]);
-
-const mongoClient = new MongoClient(process.env.MONGO_URI);
-
-function getDataBase() {
-  mongoClient.connect();
-  return mongoClient.db("bate-papo-uol");
-}
-
-function closeDataBase() {
-  mongoClient.close();
-}
 
 app.post("/participants", async (req, res) => {
   const { name } = req.body;
@@ -34,12 +26,15 @@ app.post("/participants", async (req, res) => {
 
   try {
     const db = getDataBase();
-    const user = await db.collection("participants").findOne({ name });
+    const user = await getUserByName(name, db);
+
+    // checks whether the user exists in the database
     if (user) {
       res.sendStatus(409);
       closeDataBase();
       return;
     }
+
     saveUser(name, db);
     res.sendStatus(201);
   } catch (error) {
@@ -51,8 +46,8 @@ app.post("/participants", async (req, res) => {
 app.get("/participants", async (req, res) => {
   try {
     const db = getDataBase();
-    const participants = await db.collection("participants").find().toArray();
-    res.send(participants);
+    const users = await db.collection("participants").find().toArray();
+    res.send(users);
   } catch (error) {
     res.status(500).send("Erro ao carregar a lista de participantes!");
     closeDataBase();
@@ -60,15 +55,14 @@ app.get("/participants", async (req, res) => {
 });
 
 app.post("/messages", async (req, res) => {
-  const { user } = req.headers;
+  const { user: name } = req.headers;
 
   try {
     const db = getDataBase();
-    const userExists = await db
-      .collection("participants")
-      .findOne({ name: user });
+    const user = await getUserByName(name, db);
 
-    if (!userExists) {
+    // checks whether the user exists in the database
+    if (!user) {
       res.sendStatus(422);
       closeDataBase();
       return;
@@ -76,11 +70,33 @@ app.post("/messages", async (req, res) => {
 
     await messageSchema.validateAsync({
       ...req.body,
-      from: user,
+      from: name,
     });
 
     saveMessage({ ...req.body, from: user }, db);
     res.sendStatus(201);
+  } catch (error) {
+    res.sendStatus(422);
+    closeDataBase();
+  }
+});
+
+app.post("/status", async (req, res) => {
+  const { user: name } = req.headers;
+
+  try {
+    const db = getDataBase();
+    const user = await getUserByName(name, db);
+
+    // checks whether the user exists in the database
+    if (!user) {
+      res.sendStatus(404);
+      closeDataBase();
+      return;
+    }
+
+    updateUserStatus(user, db);
+    res.sendStatus(200);
   } catch (error) {
     res.sendStatus(422);
     closeDataBase();
