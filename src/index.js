@@ -76,7 +76,7 @@ app.post("/messages", async (req, res) => {
       from: name,
     });
 
-    saveMessage({ ...req.body, from: user }, db);
+    saveMessage({ ...req.body, from: name }, db);
     res.sendStatus(201);
   } catch (error) {
     res.sendStatus(422);
