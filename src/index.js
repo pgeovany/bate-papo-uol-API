@@ -7,6 +7,7 @@ import saveMessage from "./utils/saveMessage.js";
 import updateUserStatus from "./utils/updateUserStatus.js";
 import getUserByName from "./utils/getUserByName.js";
 import mapInactiveUsers from "./utils/mapInactiveUsers.js";
+import getUserMessages from "./utils/getUserMessages.js";
 import { userSchema, messageSchema } from "./utils/schemas.js";
 import { getDataBase, closeDataBase } from "./utils/dataBaseFunctions.js";
 
@@ -31,7 +32,6 @@ app.post("/participants", async (req, res) => {
     const db = getDataBase();
     const user = await getUserByName(name, db);
 
-    // checks whether the user exists in the database
     if (user) {
       res.sendStatus(409);
       closeDataBase();
@@ -64,7 +64,6 @@ app.post("/messages", async (req, res) => {
     const db = getDataBase();
     const user = await getUserByName(name, db);
 
-    // checks whether the user exists in the database
     if (!user) {
       res.sendStatus(422);
       closeDataBase();
@@ -84,6 +83,28 @@ app.post("/messages", async (req, res) => {
   }
 });
 
+app.get("/messages", async (req, res) => {
+  const { limit } = req.query;
+  const { user: name } = req.headers;
+
+  try {
+    await userSchema.validateAsync({ name });
+
+    const db = getDataBase();
+    const messages = await getUserMessages(name, db);
+    closeDataBase();
+
+    if (limit) {
+      res.send(messages.slice(-limit));
+    } else {
+      res.send(messages);
+    }
+  } catch (error) {
+    res.sendStatus(500);
+    closeDataBase();
+  }
+});
+
 app.post("/status", async (req, res) => {
   const { user: name } = req.headers;
 
@@ -91,7 +112,6 @@ app.post("/status", async (req, res) => {
     const db = getDataBase();
     const user = await getUserByName(name, db);
 
-    // checks whether the user exists in the database
     if (!user) {
       res.sendStatus(404);
       closeDataBase();

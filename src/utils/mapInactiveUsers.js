@@ -18,7 +18,7 @@ function removeInactiveUsers(inactiveUsers, db) {
   });
 }
 
-export default function mapInactiveUsers() {
+function mapInactiveUsers() {
   setInterval(async () => {
     const db = getDataBase();
     const users = await db.collection("participants").find().toArray();
@@ -28,3 +28,5 @@ export default function mapInactiveUsers() {
     removeInactiveUsers(inactiveUsers, db);
   }, FIFTEEN_SECONDS);
 }
+
+export default mapInactiveUsers;
