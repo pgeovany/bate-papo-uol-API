@@ -23,7 +23,7 @@ function mapInactiveUsers() {
     const db = getDataBase();
     const users = await db.collection("participants").find().toArray();
     const inactiveUsers = users.filter(
-      (user) => Date.now() - user.lastStatus >= TEN_SECONDS
+      (user) => Date.now() - user.lastStatus > TEN_SECONDS
     );
     removeInactiveUsers(inactiveUsers, db);
   }, FIFTEEN_SECONDS);

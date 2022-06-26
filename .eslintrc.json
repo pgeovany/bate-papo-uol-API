@@ -11,6 +11,7 @@
   "rules": {
     "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
     "no-console": "off",
-    "import/extensions": "off"
+    "import/extensions": "off",
+    "no-magic-numbers": "error"
   }
 }
