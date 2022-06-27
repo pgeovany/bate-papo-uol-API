@@ -2,18 +2,22 @@ import express, { json } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 
-import saveUser from "./utils/saveUser.js";
-import saveMessage from "./utils/saveMessage.js";
-import updateUserStatus from "./utils/updateUserStatus.js";
-import getUserByName from "./utils/getUserByName.js";
-import getUserMessages from "./utils/getUserMessages.js";
-import mapInactiveUsers from "./utils/mapInactiveUsers.js";
 import sanitizeString from "./utils/sanitizeString.js";
+import mapInactiveUsers from "./utils/mapInactiveUsers.js";
 import { userSchema, messageSchema } from "./utils/schemas.js";
 import { getDataBase, closeDataBase } from "./utils/dataBaseFunctions.js";
-import getMessageById from "./utils/getMessageById.js";
-import deleteMessage from "./utils/deleteMessage.js";
-import editMessage from "./utils/editMessage.js";
+import {
+  saveUser,
+  getUserByName,
+  updateUserStatus,
+} from "./utils/usersFunctions.js";
+import {
+  saveMessage,
+  getMessageById,
+  getUserMessages,
+  deleteMessage,
+  editMessage,
+} from "./utils/messagesFunctions.js";
 
 dotenv.config();
 
@@ -30,6 +34,7 @@ app.use([cors(), json()]);
 
 mapInactiveUsers();
 
+// participants routes
 app.post("/participants", async (req, res) => {
   let { name } = req.body;
 
@@ -71,6 +76,28 @@ app.get("/participants", async (req, res) => {
   }
 });
 
+app.post("/status", async (req, res) => {
+  const { user: name } = req.headers;
+
+  try {
+    const db = getDataBase();
+    const user = await getUserByName(name, db);
+
+    if (!user) {
+      res.sendStatus(NOT_FOUND);
+      closeDataBase();
+      return;
+    }
+
+    updateUserStatus(user, db);
+    res.sendStatus(OK);
+  } catch (error) {
+    res.sendStatus(UNPROCESSABLE_ENTITY);
+    closeDataBase();
+  }
+});
+
+// messages routes
 app.post("/messages", async (req, res) => {
   let { user: from } = req.headers;
   let { to, text, type } = req.body;
@@ -120,27 +147,6 @@ app.get("/messages", async (req, res) => {
     }
   } catch (error) {
     res.sendStatus(INTERNAL_SERVER_ERROR);
-    closeDataBase();
-  }
-});
-
-app.post("/status", async (req, res) => {
-  const { user: name } = req.headers;
-
-  try {
-    const db = getDataBase();
-    const user = await getUserByName(name, db);
-
-    if (!user) {
-      res.sendStatus(NOT_FOUND);
-      closeDataBase();
-      return;
-    }
-
-    updateUserStatus(user, db);
-    res.sendStatus(OK);
-  } catch (error) {
-    res.sendStatus(UNPROCESSABLE_ENTITY);
     closeDataBase();
   }
 });

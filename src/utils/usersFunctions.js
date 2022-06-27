@@ -14,4 +14,14 @@ function saveUser(name, db) {
   });
 }
 
-export default saveUser;
+function getUserByName(name, db) {
+  return db.collection("participants").findOne({ name });
+}
+
+async function updateUserStatus(user, db) {
+  await db
+    .collection("participants")
+    .updateOne({ name: user.name }, { $set: { lastStatus: Date.now() } });
+}
+
+export { saveUser, getUserByName, updateUserStatus };
