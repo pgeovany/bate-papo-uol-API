@@ -13,6 +13,7 @@
     "no-console": "off",
     "import/extensions": "off",
     "no-magic-numbers": "error",
-    "import/no-unresolved": "off"
+    "import/no-unresolved": "off",
+    "no-underscore-dangle": "off"
   }
 }

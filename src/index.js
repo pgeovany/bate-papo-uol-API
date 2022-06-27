@@ -11,11 +11,14 @@ import mapInactiveUsers from "./utils/mapInactiveUsers.js";
 import sanitizeString from "./utils/sanitizeString.js";
 import { userSchema, messageSchema } from "./utils/schemas.js";
 import { getDataBase, closeDataBase } from "./utils/dataBaseFunctions.js";
+import getMessageById from "./utils/getMessageById.js";
+import deleteMessage from "./utils/deleteMessage.js";
 
 dotenv.config();
 
 const OK = 200;
 const CREATED = 201;
+const UNAUTHORIZED = 401;
 const NOT_FOUND = 404;
 const CONFLICT = 409;
 const UNPROCESSABLE_ENTITY = 422;
@@ -138,6 +141,32 @@ app.post("/status", async (req, res) => {
   } catch (error) {
     res.sendStatus(UNPROCESSABLE_ENTITY);
     closeDataBase();
+  }
+});
+
+app.delete("/messages/:id", async (req, res) => {
+  const { id } = req.params;
+  const { user } = req.headers;
+
+  try {
+    const db = getDataBase();
+    const message = await getMessageById(id, db);
+    console.log(message);
+
+    if (!message) {
+      res.sendStatus(NOT_FOUND);
+      closeDataBase();
+      return;
+    }
+    if (message.from !== user) {
+      res.sendStatus(UNAUTHORIZED);
+      closeDataBase();
+      return;
+    }
+    await deleteMessage(message._id, db);
+    res.sendStatus(OK);
+  } catch (error) {
+    res.sendStatus(INTERNAL_SERVER_ERROR);
   }
 });
 
