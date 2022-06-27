@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 
 function saveUser(name, db) {
-  const time = dayjs().format("HH:m:s");
+  const time = dayjs().format("HH:mm:s");
 
   db.collection("participants").insertOne({ name, lastStatus: Date.now() });
 

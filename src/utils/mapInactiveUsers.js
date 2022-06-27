@@ -6,7 +6,7 @@ const FIFTEEN_SECONDS = 15000;
 
 function removeInactiveUsers(inactiveUsers, db) {
   inactiveUsers.forEach((user) => {
-    const time = dayjs().format("HH:m:s");
+    const time = dayjs().format("HH:mm:s");
     db.collection("participants").deleteOne({ name: user.name });
     db.collection("messages").insertOne({
       from: user.name,

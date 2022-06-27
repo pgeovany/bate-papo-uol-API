@@ -13,6 +13,7 @@ import { userSchema, messageSchema } from "./utils/schemas.js";
 import { getDataBase, closeDataBase } from "./utils/dataBaseFunctions.js";
 import getMessageById from "./utils/getMessageById.js";
 import deleteMessage from "./utils/deleteMessage.js";
+import editMessage from "./utils/editMessage.js";
 
 dotenv.config();
 
@@ -151,7 +152,6 @@ app.delete("/messages/:id", async (req, res) => {
   try {
     const db = getDataBase();
     const message = await getMessageById(id, db);
-    console.log(message);
 
     if (!message) {
       res.sendStatus(NOT_FOUND);
@@ -167,6 +167,51 @@ app.delete("/messages/:id", async (req, res) => {
     res.sendStatus(OK);
   } catch (error) {
     res.sendStatus(INTERNAL_SERVER_ERROR);
+  }
+});
+
+app.put("/messages/:id", async (req, res) => {
+  const { id } = req.params;
+  let { user: from } = req.headers;
+  let { to, text, type } = req.body;
+
+  try {
+    from = sanitizeString(from);
+    to = sanitizeString(to);
+    text = sanitizeString(text);
+    type = sanitizeString(type);
+
+    await messageSchema.validateAsync({
+      from,
+      to,
+      text,
+      type,
+    });
+  } catch (error) {
+    res.sendStatus(UNPROCESSABLE_ENTITY);
+    closeDataBase();
+    return;
+  }
+
+  try {
+    const db = getDataBase();
+    const message = await getMessageById(id, db);
+
+    if (!message) {
+      res.sendStatus(NOT_FOUND);
+      closeDataBase();
+      return;
+    }
+    if (message.from !== from) {
+      res.sendStatus(UNAUTHORIZED);
+      closeDataBase();
+      return;
+    }
+    await editMessage(to, text, type, message._id, db);
+    res.sendStatus(OK);
+  } catch (error) {
+    res.sendStatus(INTERNAL_SERVER_ERROR);
+    closeDataBase();
   }
 });
 
