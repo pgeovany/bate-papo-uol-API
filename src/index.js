@@ -6,8 +6,9 @@ import saveUser from "./utils/saveUser.js";
 import saveMessage from "./utils/saveMessage.js";
 import updateUserStatus from "./utils/updateUserStatus.js";
 import getUserByName from "./utils/getUserByName.js";
-import mapInactiveUsers from "./utils/mapInactiveUsers.js";
 import getUserMessages from "./utils/getUserMessages.js";
+import mapInactiveUsers from "./utils/mapInactiveUsers.js";
+import sanitizeString from "./utils/sanitizeString.js";
 import { userSchema, messageSchema } from "./utils/schemas.js";
 import { getDataBase, closeDataBase } from "./utils/dataBaseFunctions.js";
 
@@ -26,12 +27,14 @@ app.use([cors(), json()]);
 mapInactiveUsers();
 
 app.post("/participants", async (req, res) => {
-  const { name } = req.body;
+  let { name } = req.body;
 
   try {
+    name = sanitizeString(name);
     await userSchema.validateAsync({ name });
   } catch (error) {
     res.sendStatus(UNPROCESSABLE_ENTITY);
+    closeDataBase();
     return;
   }
 
@@ -65,11 +68,17 @@ app.get("/participants", async (req, res) => {
 });
 
 app.post("/messages", async (req, res) => {
-  const { user: name } = req.headers;
+  let { user: from } = req.headers;
+  let { to, text, type } = req.body;
 
   try {
+    from = sanitizeString(from);
+    to = sanitizeString(to);
+    text = sanitizeString(text);
+    type = sanitizeString(type);
+
     const db = getDataBase();
-    const user = await getUserByName(name, db);
+    const user = await getUserByName(from, db);
 
     if (!user) {
       res.sendStatus(UNPROCESSABLE_ENTITY);
@@ -78,11 +87,13 @@ app.post("/messages", async (req, res) => {
     }
 
     await messageSchema.validateAsync({
-      ...req.body,
-      from: name,
+      from,
+      to,
+      text,
+      type,
     });
 
-    saveMessage({ ...req.body, from: name }, db);
+    saveMessage(from, to, text, type, db);
     res.sendStatus(CREATED);
   } catch (error) {
     res.sendStatus(UNPROCESSABLE_ENTITY);
@@ -95,11 +106,8 @@ app.get("/messages", async (req, res) => {
   const { user: name } = req.headers;
 
   try {
-    await userSchema.validateAsync({ name });
-
     const db = getDataBase();
     const messages = await getUserMessages(name, db);
-    closeDataBase();
 
     if (limit) {
       res.send(messages.slice(-limit));
